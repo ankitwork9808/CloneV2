@@ -70,7 +70,8 @@ The agent will then:
 - Call the `scrapeWebsite()` tool
 - Clone the site into `./cloned-site/`
 - Rewrite assets/links so the site runs fully **offline**
-- Promot to ask to publish the site live
+- Edit the site, ask to add update or remove
+- Prompt to ask to publish the site live
 - If Y then `publishSite()`
 - Click and view the site
 
