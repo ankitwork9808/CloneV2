@@ -1,0 +1,6 @@
+dist/
+node_modules/
+cloned-site/
+.vscode/
+output/
+.env
