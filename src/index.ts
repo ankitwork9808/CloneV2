@@ -93,7 +93,7 @@ async function editHtml(filePath: string) {
 
     console.log("⏳ Processing...");
 
-    try {;
+    try {
       const prompt = String.raw`
 You are "Deterministic HTML Editor v1".
 
