@@ -84,19 +84,11 @@ async function editHtml(filePath: string) {
   console.log(`📝 Editing: ${filePath}`);
   console.log("Type your instructions (or type 'exit' to quit)\n");
 
-  const rl = readline.createInterface({
-    input: process.stdin,
-    output: process.stdout,
-    prompt: "> ",
-  });
-
-  rl.prompt();
-
-  rl.on("line", async (line) => {
-    const instruction = line.trim();
+  while(true) {
+    const instruction = await getConsoleInput("> ");
     if (instruction.toLowerCase() === "exit") {
-      rl.close();
-      return;
+      console.log("✅ Finished editing.");
+      break;
     }
 
     console.log("⏳ Processing...");
@@ -175,9 +167,7 @@ Return ONLY the full updated HTML document. No code fences, no extra commentary,
     } catch (err : any) {
       console.error("❌ Error:", err?.message);
     }
-
-    rl.prompt();
-  });
+  };
 }
 
 const TOOL_MAP = {
@@ -191,14 +181,13 @@ async function main() {
   const userPrompt = await getConsoleInput("👨‍💻 Enter the website URL: ");
   const cloned_site = await scrapeWebsite(userPrompt);
   console.log(cloned_site);
+  await editHtml(cloned_site.path+'/index.html');
   const console_input = await getConsoleInput("Do you want to publish the site? (y/n) ");
-  console.log(console_input);
   if(console_input == 'y') {
     const subdomain = await getConsoleInput("Enter the sub-domain, *.vercel.com : ");
     publishSite(cloned_site.path, subdomain);
   }
   rl.close();
-  await editHtml(cloned_site.path+'/index.html');
 
   const SYSTEM_PROMPT = `
     You are an AI assistant who works on START, THINK and OUTPUT format.
