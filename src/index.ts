@@ -1,5 +1,6 @@
 import "dotenv/config";
 import axios from "axios";
+import fs from "fs-extra";
 import readline from "readline";
 import { OpenAI } from "openai";
 import { exec, execSync } from "child_process";
@@ -72,6 +73,113 @@ async function executeCommand(cmd: string) {
   });
 }
 
+async function editHtml(filePath: string) {
+  if (!fs.existsSync(filePath)) {
+    console.error(`❌ File not found: ${filePath}`);
+    process.exit(1);
+  }
+
+  let html = fs.readFileSync(filePath, "utf-8");
+
+  console.log(`📝 Editing: ${filePath}`);
+  console.log("Type your instructions (or type 'exit' to quit)\n");
+
+  const rl = readline.createInterface({
+    input: process.stdin,
+    output: process.stdout,
+    prompt: "> ",
+  });
+
+  rl.prompt();
+
+  rl.on("line", async (line) => {
+    const instruction = line.trim();
+    if (instruction.toLowerCase() === "exit") {
+      rl.close();
+      return;
+    }
+
+    console.log("⏳ Processing...");
+
+    try {;
+      const prompt = String.raw`
+You are "Deterministic HTML Editor v1".
+
+Goal: Apply ONLY the requested changes to the provided HTML while preserving all unrelated content byte-for-byte. Return the FULL updated HTML document and nothing else.
+
+# INPUT
+Instruction (natural language):
+"""${instruction}"""
+
+Original HTML (full document) between tags:
+<ORIGINAL_HTML>
+${html}
+</ORIGINAL_HTML>
+
+# HARD CONSTRAINTS (must follow)
+1) OUTPUT SHAPE
+   - Return ONLY the complete updated HTML document (including <!DOCTYPE ...> if present).
+   - No explanations, no markdown fences, no extra text.
+
+2) MINIMAL-DIFF POLICY
+   - Unchanged sections MUST remain byte-identical (same order, whitespace, and formatting).
+   - Do NOT prettify, rewrap, or reindent unrelated lines.
+
+3) PRESERVE EXISTING STRUCTURE
+   - Do NOT rename or remove existing ids, classes, data-* attributes, or inline event handlers unless explicitly instructed.
+   - Do NOT reorder DOM siblings unless strictly necessary for the change.
+   - Keep <head> content (meta, link, script) exactly as-is unless explicitly instructed.
+
+4) CSS CHANGES
+   - Do NOT modify or replace external CSS files or <link> references.
+   - Prefer additive, scoped CSS inside a single style tag you create:
+     <style id="ai-edits" data-ai-edits="true"> … </style>
+     Place it at the END of <head>.
+   - Namescope any new selectors to avoid collisions (e.g., [data-ai-edited], .ai-*, or #ai-*).
+
+5) JS CHANGES
+   - Do NOT modify existing external scripts or inline scripts unless explicitly asked.
+   - Prefer additive, isolated JS in a single script tag before </body>:
+     <script id="ai-edits" data-ai-edits="true">(function(){ /* your code */ })();</script>
+   - Use unique names, avoid globals, and make edits idempotent (safe if injected twice).
+   - Do NOT remove any exisiting element id or css, add inline css or custom css to achive the changes.
+
+6) HTML CHANGES
+   - Update only the smallest necessary subtree(s).
+   - When you change or add nodes, add data-ai-edited="true" to those nodes.
+   - Optionally add a short HTML comment above changed blocks: <!-- AI-EDIT: <reason> -->
+   - Keep DOCTYPE, <html lang>, charset, and viewport meta exactly as in input unless instructed.
+
+7) SAFETY & AMBIGUITY
+   - If the instruction is ambiguous, prefer additive changes near the most relevant area (e.g., append inside an existing container) rather than destructive edits.
+   - If the requested change would risk breaking layout/behavior, make no change and instead return the original HTML unchanged (you may insert <!-- AI-EDIT: no-op: reason -->).
+
+# TASK
+Apply the Instruction to the Original HTML following all constraints above.
+
+# OUTPUT
+Return ONLY the full updated HTML document. No code fences, no extra commentary, no JSON.
+`;
+
+      const response = await openai.chat.completions.create({
+        model: process.env.OPENAI_MODEL || "gpt-4o-mini",
+        messages: [{ role: "user", content: prompt }],
+      });
+
+      console.log(response)
+      let updatedHtml = response.choices[0].message?.content?.trim() || '';
+      console.log(updatedHtml);
+
+      fs.writeFileSync(filePath, updatedHtml, "utf-8");
+      console.log(`✅ Updated ${filePath}`);
+    } catch (err : any) {
+      console.error("❌ Error:", err?.message);
+    }
+
+    rl.prompt();
+  });
+}
+
 const TOOL_MAP = {
   getWeatherDetailsByCity: getWeatherDetailsByCity,
   getGithubUserInfoByUsername: getGithubUserInfoByUsername,
@@ -90,6 +198,7 @@ async function main() {
     publishSite(cloned_site.path, subdomain);
   }
   rl.close();
+  await editHtml(cloned_site.path+'/index.html');
 
   const SYSTEM_PROMPT = `
     You are an AI assistant who works on START, THINK and OUTPUT format.
@@ -159,7 +268,7 @@ async function main() {
     },
   ];
 
-  while (true) {
+  while (false) {
     const response = await openai.chat.completions.create({
       model: process.env.OPENAI_MODEL || "gpt-4o-mini",
       messages: messages,
@@ -215,7 +324,7 @@ async function main() {
         break;
       }
       
-    } catch (error) {
+    } catch (error : any) {
       console.error(
         `⚠️ Error occurred while processing :`,
         error
@@ -233,7 +342,7 @@ async function main() {
       break;
     }
   }
-  console.log("\n ...DONE 👍");
+  //console.log("\n ...DONE 👍");
 }
 
 main();
