@@ -1,5 +1,5 @@
 # 🧠 Web Clone AI Agent
-
+![Ai Agents](screenshots/main.png)
 This project is an **AI-powered CLI tool** that clones websites into fully functional offline versions using **plain HTML, CSS, and JS**.
 
 The agent follows a structured reasoning process (**START → THINK → TOOL → OBSERVE → OUTPUT**) while executing the cloning operation.
@@ -91,4 +91,6 @@ The agent will then:
 
 ## 🎥 Demo
 
-[![Watch the video](https://www.youtube.com/watch?v=3FJbVMWAkog)]([https://youtu.be/om7hPTGVbUE](https://www.youtube.com/watch?v=3FJbVMWAkog))
+[![Watch the video](https://img.youtube.com/vi/3FJbVMWAkog/maxresdefault.jpg)](https://youtu.be/3FJbVMWAkog)
+##
+[![Demo](https://img.youtube.com/vi/Tc82zmdvEWg/maxresdefault.jpg)](https://www.youtube.com/watch?v=Tc82zmdvEWg)
